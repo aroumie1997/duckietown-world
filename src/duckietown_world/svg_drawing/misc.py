@@ -236,6 +236,7 @@ def draw_static(root, output_dir, pixel_size=(480, 480), area=None, images=None,
             <input id='checkbox-vehicles' type="checkbox"  onclick="hideshow(this);" checked>vehicles</input>
             <input id='checkbox-duckies' type="checkbox"  onclick="hideshow(this);" checked>duckies</input>
             <input id='checkbox-signs' type="checkbox"  onclick="hideshow(this);" checked>signs</input>
+            <input id='checkbox-sign-papers' type="checkbox"  onclick="hideshow(this);" checked>signs textures</input>
             <input id='checkbox-decorations' type="checkbox"  onclick="hideshow(this);" checked>decorations</input>
           
             </p>
@@ -251,10 +252,11 @@ def draw_static(root, output_dir, pixel_size=(480, 480), area=None, images=None,
                     "checkbox-textures": "g.static .tile-textures",
                     "checkbox-axes": "g.axes",
                     "checkbox-lane_segments": "g.static .LaneSegment",
-                    "checkbox-lane_segments-control_points": ".LaneSegment .control-point",
+                    "checkbox-lane_segments-control_points": " .control-point",
                     "checkbox-current_lane": "g.keyframe .LaneSegment",
                     "checkbox-duckies": ".Duckie",
                     "checkbox-signs": ".Sign",
+                    "checkbox-sign-papers": ".Sign .sign-paper",
                     "checkbox-vehicles": ".Vehicle",
                     "checkbox-decorations": ".Decoration",
                     'checkbox-anchors': '.Anchor',
@@ -296,6 +298,18 @@ def draw_static(root, output_dir, pixel_size=(480, 480), area=None, images=None,
                             visualize_controls=visualize_controls)
     with open(fn_html, 'w') as f:
         f.write(html)
+
+    # language=css
+    style = """
+        .sign-paper {
+            display: none;
+        }
+        g.axes, .LaneSegment {
+            display: none;
+        }
+         
+    """
+    drawing.defs.add(drawing.style(style))
 
     drawing.save(pretty=True)
     logger.info('Written SVG to %s' % fn_svg)
@@ -369,7 +383,6 @@ def make_tabs(timeseries):
 
         layout = {'font': dict(size=10), 'margin': dict(t=0)}
 
-
         n = len(scatters)
         fig = tools.make_subplots(rows=1, cols=n)
         fig.layout.update(layout)
@@ -429,7 +442,6 @@ def render_tabs(tabs):
         div_c.append(tab.content)
 
         div_content.append(div_c)
-
 
     script = Tag(name='script')
     # language=javascript
@@ -569,6 +581,16 @@ def make_html_slider(drawing, keyframes, obs_div, other, div_timeseries, visuali
     });
 </script>
 """ % (nkeyframes - 1)
+
+    if nkeyframes <= 1:
+        controls_html += ('''
+        <style>
+        .slidecontainer {
+        display: none;
+        }
+        </style>
+        ''')
+
     controls = bs(controls_html)
 
     valbox = controls.find('span', id='time-display')
@@ -619,6 +641,15 @@ body {{
     """.format(controls=str(controls), drawing=drawing_svg, obs_div=obs_div, other=other,
                div_timeseries=div_timeseries, visualize_controls=visualize_controls)
     return doc
+
+
+def mime_from_fn(fn):
+    if fn.endswith('png'):
+        return 'image/png'
+    elif fn.endswith('jpg'):
+        return 'image/jpeg'
+    else:
+        raise ValueError(fn)
 
 
 def data_encoded_for_src(data, mime):
